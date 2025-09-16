@@ -41,7 +41,7 @@ def show_wordcloud(tokens):
     st.pyplot(plt)
     plt.clf()
 
-# 📊 Word Frequency Bar Graph
+# 📊 Word Frequency Bar Chart
 def show_frequency(tokens):
     freq = Counter(tokens).most_common(20)
     words, counts = zip(*freq)
@@ -51,17 +51,13 @@ def show_frequency(tokens):
     st.pyplot(plt)
     plt.clf()
 
-# 🔥 Heatmap of Word Co-occurrence
-def show_heatmap(tokens):
-    top_words = [word for word, _ in Counter(tokens).most_common(20)]
-    matrix = np.zeros((20, 20))
-    for i, word1 in enumerate(top_words):
-        for j, word2 in enumerate(top_words):
-            count = sum(1 for k in range(len(tokens)-1) if tokens[k] == word1 and tokens[k+1] == word2)
-            matrix[i][j] = count
-    df = pd.DataFrame(matrix, index=top_words, columns=top_words)
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(df, cmap='YlGnBu', annot=True)
+# 🥧 Word Frequency Pie Chart
+def show_piechart(tokens):
+    freq = Counter(tokens).most_common(10)
+    words, counts = zip(*freq)
+    plt.figure(figsize=(6, 6))
+    plt.pie(counts, labels=words, autopct='%1.1f%%', startangle=140, colors=sns.color_palette('pastel'))
+    plt.axis('equal')
     st.pyplot(plt)
     plt.clf()
 
@@ -89,13 +85,13 @@ if uploaded_file:
 
         tokens = preprocess_text(raw_text)
 
-        option = st.selectbox("Choose Visualization", ["Word Cloud", "Word Frequency", "Heatmap"])
+        option = st.selectbox("Choose Visualization", ["Word Cloud", "Word Frequency", "Pie Chart"])
 
         if option == "Word Cloud":
             show_wordcloud(tokens)
         elif option == "Word Frequency":
             show_frequency(tokens)
-        elif option == "Heatmap":
-            show_heatmap(tokens)
+        elif option == "Pie Chart":
+            show_piechart(tokens)
     else:
         st.warning("No text could be extracted from the file.")
