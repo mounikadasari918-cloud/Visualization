@@ -8,13 +8,16 @@ import pandas as pd
 from collections import Counter
 import numpy as np
 import re
+import io
 
 # 📄 Extract text from PDF using pdfplumber
 def extract_text_pdf(file):
     text = ""
     with pdfplumber.open(file) as pdf:
         for page in pdf.pages:
-            text += page.extract_text() or ""
+            page_text = page.extract_text()
+            if page_text:
+                text += page_text
     return text
 
 # 📄 Extract text from DOCX
@@ -36,6 +39,7 @@ def show_wordcloud(tokens):
     plt.imshow(wc, interpolation='bilinear')
     plt.axis('off')
     st.pyplot(plt)
+    plt.clf()
 
 # 📊 Word Frequency Bar Graph
 def show_frequency(tokens):
@@ -45,6 +49,7 @@ def show_frequency(tokens):
     sns.barplot(x=list(words), y=list(counts), palette='viridis')
     plt.xticks(rotation=45)
     st.pyplot(plt)
+    plt.clf()
 
 # 🔥 Heatmap of Word Co-occurrence
 def show_heatmap(tokens):
@@ -58,27 +63,39 @@ def show_heatmap(tokens):
     plt.figure(figsize=(10, 8))
     sns.heatmap(df, cmap='YlGnBu', annot=True)
     st.pyplot(plt)
+    plt.clf()
 
 # 🚀 Streamlit UI
 st.title("📚 Text Visualization App")
 uploaded_file = st.file_uploader("Upload PDF or DOCX", type=["pdf", "docx"])
 
 if uploaded_file:
-    if uploaded_file.name.endswith(".pdf"):
-        raw_text = extract_text_pdf(uploaded_file)
+    file_type = uploaded_file.name.split('.')[-1].lower()
+    raw_text = ""
+
+    try:
+        if file_type == "pdf":
+            raw_text = extract_text_pdf(io.BytesIO(uploaded_file.read()))
+        elif file_type == "docx":
+            raw_text = extract_text_docx(uploaded_file)
+        else:
+            st.error("Unsupported file format.")
+    except Exception as e:
+        st.error(f"Error reading file: {e}")
+
+    if raw_text:
+        st.subheader("Extracted Text Preview")
+        st.write(raw_text[:1000] + "...")  # Show preview
+
+        tokens = preprocess_text(raw_text)
+
+        option = st.selectbox("Choose Visualization", ["Word Cloud", "Word Frequency", "Heatmap"])
+
+        if option == "Word Cloud":
+            show_wordcloud(tokens)
+        elif option == "Word Frequency":
+            show_frequency(tokens)
+        elif option == "Heatmap":
+            show_heatmap(tokens)
     else:
-        raw_text = extract_text_docx(uploaded_file)
-
-    st.subheader("Extracted Text Preview")
-    st.write(raw_text[:1000] + "...")  # Show preview
-
-    tokens = preprocess_text(raw_text)
-
-    option = st.selectbox("Choose Visualization", ["Word Cloud", "Word Frequency", "Heatmap"])
-
-    if option == "Word Cloud":
-        show_wordcloud(tokens)
-    elif option == "Word Frequency":
-        show_frequency(tokens)
-    elif option == "Heatmap":
-        show_heatmap(tokens)
+        st.warning("No text could be extracted from the file.")
