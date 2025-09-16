@@ -1,0 +1,5 @@
+python-docx
+pdfplumber
+matplotlib
+seaborn
+wordcloud
